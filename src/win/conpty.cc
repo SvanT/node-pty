@@ -251,15 +251,16 @@ static Napi::Value PtyStartProcess(const Napi::CallbackInfo& info) {
   std::unique_ptr<wchar_t[]> mutableCommandline;
   PROCESS_INFORMATION _piClient{};
 
-  if (info.Length() != 7 ||
+  if (info.Length() != 8 ||
       !info[0].IsString() ||
       !info[1].IsNumber() ||
       !info[2].IsNumber() ||
       !info[3].IsBoolean() ||
       !info[4].IsString() ||
       !info[5].IsBoolean() ||
-      !info[6].IsBoolean()) {
-    throw Napi::Error::New(env, "Usage: pty.startProcess(file, cols, rows, debug, pipeName, inheritCursor, useConptyDll)");
+      !info[6].IsBoolean() ||
+      !info[7].IsBoolean()) {
+    throw Napi::Error::New(env, "Usage: pty.startProcess(file, cols, rows, debug, pipeName, inheritCursor, useConptyDll, passthrough)");
   }
 
   const std::wstring filename(path_util::to_wstring(info[0].As<Napi::String>()));
@@ -269,6 +270,7 @@ static Napi::Value PtyStartProcess(const Napi::CallbackInfo& info) {
   const std::wstring pipeName(path_util::to_wstring(info[4].As<Napi::String>()));
   const bool inheritCursor = info[5].As<Napi::Boolean>().Value();
   const bool useConptyDll = info[6].As<Napi::Boolean>().Value();
+  const bool passthrough = info[7].As<Napi::Boolean>().Value();
 
   // use environment 'Path' variable to determine location of
   // the relative path that we have recieved (e.g cmd.exe)
@@ -288,7 +290,10 @@ static Napi::Value PtyStartProcess(const Napi::CallbackInfo& info) {
 
   HANDLE hIn, hOut;
   HPCON hpc;
-  HRESULT hr = CreateNamedPipesAndPseudoConsole(info, {cols, rows}, inheritCursor ? 1/*PSEUDOCONSOLE_INHERIT_CURSOR*/ : 0, &hIn, &hOut, &hpc, inName, outName, pipeName, useConptyDll);
+  DWORD dwFlags = 0;
+  if (inheritCursor) dwFlags |= 1; // PSEUDOCONSOLE_INHERIT_CURSOR
+  if (passthrough) dwFlags |= PSEUDOCONSOLE_PASSTHROUGH_MODE;
+  HRESULT hr = CreateNamedPipesAndPseudoConsole(info, {cols, rows}, dwFlags, &hIn, &hOut, &hpc, inName, outName, pipeName, useConptyDll);
 
   // Restore default handling of ctrl+c
   SetConsoleCtrlHandler(NULL, FALSE);

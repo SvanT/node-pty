@@ -109,6 +109,13 @@ declare module 'node-pty' {
      * @see https://docs.microsoft.com/en-us/windows/console/createpseudoconsole
      */
     conptyInheritCursor?: boolean;
+
+    /**
+     * Whether to use PSEUDOCONSOLE_PASSTHROUGH_MODE in conpty. When enabled, ConPTY passes all
+     * VT sequences through to the terminal without processing them, allowing the terminal
+     * emulator to handle them directly. Requires useConptyDll to be true.
+     */
+    conptyPassthrough?: boolean;
   }
 
   /**

@@ -53,7 +53,8 @@ export class WindowsPtyAgent {
     rows: number,
     debug: boolean,
     private _useConptyDll: boolean = false,
-    conptyInheritCursor: boolean = false
+    conptyInheritCursor: boolean = false,
+    conptyPassthrough: boolean = false
   ) {
     if (!conptyNative) {
       conptyNative = loadNativeModule('conpty').module;
@@ -67,7 +68,7 @@ export class WindowsPtyAgent {
     const commandLine = argsToCommandLine(file, args);
 
     // Open pty session.
-    const term: IConptyProcess = conptyNative.startProcess(file, cols, rows, debug, this._generatePipeName(), conptyInheritCursor, this._useConptyDll);
+    const term: IConptyProcess = conptyNative.startProcess(file, cols, rows, debug, this._generatePipeName(), conptyInheritCursor, this._useConptyDll, conptyPassthrough);
 
     // Not available on windows.
     this._fd = term.fd;
