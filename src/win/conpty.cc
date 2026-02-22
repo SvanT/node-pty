@@ -180,6 +180,31 @@ HANDLE LoadConptyDll(const Napi::CallbackInfo& info,
   wchar_t conptyDllPath[MAX_PATH];
   PathCombineW(conptyDllPath, currentDir, L"conpty\\conpty.dll");
   if (!path_util::file_exists(conptyDllPath)) {
+    // Fallback: look in third_party directory (handles electron-rebuild wiping build/Release/conpty/)
+    wchar_t fallbackPath[MAX_PATH];
+    PathCombineW(fallbackPath, currentDir, L"..\\..\\third_party\\conpty");
+    DWORD fallbackAttr = ::GetFileAttributesW(fallbackPath);
+    if (fallbackAttr != INVALID_FILE_ATTRIBUTES && (fallbackAttr & FILE_ATTRIBUTE_DIRECTORY)) {
+      WIN32_FIND_DATAW findData;
+      wchar_t searchPath[MAX_PATH];
+      PathCombineW(searchPath, fallbackPath, L"*");
+      HANDLE hFind = FindFirstFileW(searchPath, &findData);
+      if (hFind != INVALID_HANDLE_VALUE) {
+        do {
+          if ((findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && findData.cFileName[0] != L'.') {
+            PathCombineW(conptyDllPath, fallbackPath, findData.cFileName);
+            wchar_t archDir[MAX_PATH];
+            PathCombineW(archDir, conptyDllPath, sizeof(void*) == 8 ? L"win10-x64" : L"win10-arm64");
+            PathCombineW(conptyDllPath, archDir, L"conpty.dll");
+            if (path_util::file_exists(conptyDllPath)) {
+              FindClose(hFind);
+              return LoadLibraryW(conptyDllPath);
+            }
+          }
+        } while (FindNextFileW(hFind, &findData));
+        FindClose(hFind);
+      }
+    }
     std::wstring errorMessage = L"Cannot find conpty.dll at " + std::wstring(conptyDllPath);
     std::string errorMessageStr = path_util::wstring_to_string(errorMessage);
     throw errorWithCode(info, errorMessageStr.c_str());
