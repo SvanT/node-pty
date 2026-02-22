@@ -39,8 +39,7 @@
     "build": "tsc -b ./src/tsconfig.json",
     "watch": "tsc -b -w ./src/tsconfig.json",
     "lint": "eslint -c .eslintrc.js --ext .ts src/",
-    "install": "node scripts/prebuild.js || node-gyp rebuild",
-    "postinstall": "node scripts/post-install.js",
+    "install": "tsc -b ./src/tsconfig.json && (node scripts/prebuild.js || node-gyp rebuild) && node scripts/post-install.js",
     "compileCommands": "node scripts/gen-compile-commands.js",
     "test": "cross-env NODE_ENV=test mocha -R spec --exit lib/*.test.js",
     "posttest": "npm run lint",
@@ -48,18 +47,18 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "node-addon-api": "^7.1.0"
+    "@types/node": "12",
+    "node-addon-api": "^7.1.0",
+    "typescript": "^3.8.3"
   },
   "devDependencies": {
     "@types/mocha": "^7.0.2",
-    "@types/node": "12",
     "@typescript-eslint/eslint-plugin": "^2.27.0",
     "@typescript-eslint/parser": "^2.27.0",
     "cross-env": "^5.1.4",
     "eslint": "^6.8.0",
     "mocha": "10",
     "node-gyp": "^11.4.2",
-    "ps-list": "^6.0.0",
-    "typescript": "^3.8.3"
+    "ps-list": "^6.0.0"
   }
 }
